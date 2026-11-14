@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ====================================================================
-# IT0049 POS TFA7 - Automated FTP Deployment to InfinityFree
+# IT0049 POS TFA8 - Automated FTP Deployment to InfinityFree
 # Loads FTP credentials from environment variables or gitignored .deploy.env
 # ====================================================================
 
@@ -21,10 +21,10 @@ FTP_PORT="${FTP_PORT:-21}"
 FTP_USER="${FTP_USER:-}"
 FTP_PASS="${FTP_PASS:-}"
 REMOTE_HTDOCS="htdocs"
-ZIP_NAME="tfa7-infinityfree.zip"
+ZIP_NAME="tfa8-infinityfree.zip"
 ZIP_PATH="$DIR/$ZIP_NAME"
 EXTRACT_PHP="$DIR/extract.php"
-APP_URL="${APP_URL:-http://tfa7.freehosting.dev}"
+APP_URL="${APP_URL:-https://tfa8.infinityfreeapp.com}"
 
 if [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ]; then
     echo "Error: Set FTP_USER and FTP_PASS via environment or .deploy.env before running." >&2
@@ -32,7 +32,7 @@ if [ -z "$FTP_USER" ] || [ -z "$FTP_PASS" ]; then
 fi
 
 echo "=========================================================="
-echo " Starting InfinityFree FTP Deployment for TFA7"
+echo " Starting InfinityFree FTP Deployment for TFA8"
 echo " Target Domain : $APP_URL"
 echo " FTP Host      : $FTP_HOST:$FTP_PORT"
 echo " FTP User      : $FTP_USER"
@@ -57,6 +57,5 @@ curl --connect-timeout 20 --max-time 60 --progress-bar --user "$FTP_USER:$FTP_PA
 echo "==> Removing placeholder index2.html if present..."
 curl --connect-timeout 20 --max-time 30 -s --user "$FTP_USER:$FTP_PASS" -Q "DELE htdocs/index2.html" "ftp://$FTP_HOST/" > /dev/null || true
 
-echo "==> Deployment uploaded. Triggering $APP_URL/extract.php ..."
-curl -sS -m 60 "$APP_URL/extract.php"
-echo ""
+echo "==> FTP upload finished!"
+echo "==> Open in browser to extract & import schema: $APP_URL/extract.php"

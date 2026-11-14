@@ -3,7 +3,7 @@ set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TMP_DIR="/tmp/tfa7-deploy-$$"
-OUTPUT_ZIP="$DIR/tfa7-infinityfree.zip"
+OUTPUT_ZIP="$DIR/tfa8-infinityfree.zip"
 
 echo "==> Building frontend assets for production..."
 cd "$DIR"
@@ -11,7 +11,7 @@ if [ -d "$DIR/node_modules" ] && [ -f "$DIR/package.json" ]; then
     npm run build
 fi
 
-echo "==> Packaging lean production build for InfinityFree (tfa7.freehosting.dev)..."
+echo "==> Packaging lean production build for InfinityFree (tfa8.infinityfreeapp.com)..."
 rm -rf "$TMP_DIR" "$OUTPUT_ZIP"
 mkdir -p "$TMP_DIR"
 

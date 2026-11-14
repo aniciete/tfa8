@@ -1,47 +1,44 @@
-# Point-of-Sale (POS) Eloquent — Forms, Validation & File Uploads
+# Point-of-Sale (POS) Eloquent — Resource Controllers & Auth
 
 **Course:** IT0049 (Web System Technologies)  
-**Assessment:** Technical Formative Assessment 7 (TFA7) — Making It Editable in Laravel  
+**Assessment:** Technical Formative Assessment 8 (TFA8) — Locking It Down  
 **Framework:** Laravel 13.x (PHP 8.3+)  
-**Hosted Application:** [http://tfa7.freehosting.dev](http://tfa7.freehosting.dev)  
-**GitHub Repository:** [https://github.com/aniciete/tfa7](https://github.com/aniciete/tfa7)
+**Hosted Application:** [https://tfa8.infinityfreeapp.com](https://tfa8.infinityfreeapp.com)  
+**GitHub Repository:** [https://github.com/aniciete/tfa8](https://github.com/aniciete/tfa8)
 
 ---
 
 ## 1. Project Overview
 
-This project extends the **Laravel POS Eloquent** application from TFA6 with validated create and edit forms for both **customers** and **staff users**, complete with `old()` input retention, inline field and summary validation feedback, and user avatar uploads prepared for display using **Intervention Image (`intervention/image-laravel`)** on Laravel's `Storage::disk('public')`.
+This project extends the **Laravel POS Eloquent** application (TFA5–TFA7) by refactoring customer and user CRUD endpoints into full RESTful **`Route::resource()`** registrations backed by conventional resource controllers (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`), installing **Laravel Breeze** (Blade stack), and protecting all account management routes behind Laravel's **`auth` middleware**.
 
-### Required Pages and Route Table
+### Route & Access Control Matrix
 
-| URL Route | Method | Route Name | Controller Action | Purpose |
+| URI Pattern | HTTP Method(s) | Controller Action | Access Control | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
-| `/` | `GET` | `home` | `PageController@home` | Landing overview with directory & creation links |
-| `/about` | `GET` | `about` | `PageController@about` | Request validation & `Storage` upload flow guide |
-| `/customers` | `GET` | `customers.index` | `CustomerController@index` | Customer directory with `+ New Customer` and row `Edit` links |
-| `/customers/create` | `GET` | `customers.create` | `CustomerController@create` | New customer creation form |
-| `/customers` | `POST` | `customers.store` | `CustomerController@store` | Validate (`SaveCustomerRequest`) and insert customer |
-| `/customers/{customer}/edit` | `GET` | `customers.edit` | `CustomerController@edit` | Edit form pre-filled with existing customer data |
-| `/customers/{customer}` | `PUT` | `customers.update` | `CustomerController@update` | Validate and update customer (`Rule::unique()->ignore()`) |
-| `/users` | `GET` | `users.index` | `UserController@index` | Staff user directory displaying 40&times;40 avatars or placeholder |
-| `/users/create` | `GET` | `users.create` | `UserController@create` | New user form with optional avatar upload |
-| `/users` | `POST` | `users.store` | `UserController@store` | Validate (`SaveUserRequest`), prepare avatar, and insert user |
-| `/users/{user}/edit` | `GET` | `users.edit` | `UserController@edit` | Edit user form pre-filled with current details & avatar preview |
-| `/users/{user}` | `PUT` | `users.update` | `UserController@update` | Validate, crop/store new avatar if uploaded, and clean up old image |
+| `/` | `GET` | `PageController@home` | Public | Landing page & status banner |
+| `/about` | `GET` | `PageController@about` | Public | Resource routing & auth middleware guide |
+| `/login`, `/register` | `GET`, `POST` | Breeze Auth Controllers | `guest` | Operator sign-in & self-registration |
+| `/forgot-password`, `/reset-password` | `GET`, `POST` | Breeze Password Reset | `guest` | Password recovery flow |
+| `/dashboard` | `GET` | `PageController@dashboard` | `auth` | Authenticated POS KPI summary |
+| `/customers` (`Route::resource`) | `GET/POST/PUT/PATCH/DELETE` | `CustomerController` (7 actions) | `auth` | Full CRUD + record view for customers |
+| `/users` (`Route::resource`) | `GET/POST/PUT/PATCH/DELETE` | `UserController` (7 actions) | `auth` | Full CRUD + avatar upload & record view |
+| `/profile` | `GET/PATCH/DELETE` | `ProfileController` | `auth` | Personal Breeze profile & password settings |
+| `/avatars/{filename}` | `GET` | Closure (`Storage::disk('public')`) | `auth` | Authenticated avatar serving fallback |
 
 ---
 
-## 2. Validation & Image Handling Architecture
+## 2. Authentication & Resource Controller Architecture
 
-1. **Form Requests (`app/Http/Requests/`):**
-   - `SaveCustomerRequest`: trims inputs before validation; requires `full_name` (`max:100`), requires a valid unique `email` (`Rule::unique('customers', 'email')->ignore($customer?->id)`), and accepts optional `phone` (`max:20`).
-   - `SaveUserRequest`: trims inputs and defaults omitted roles to `'Staff Member'`; requires unique `username` (`regex:/^[a-zA-Z0-9._-]+$/`, `Rule::unique('users', 'username')->ignore($user?->id)`), requires `full_name` (`max:100`), accepts operational `role`, and validates `avatar` (`nullable|file|image|max:2048` — 2 MB max, rejects SVGs & non-image files).
-   - Validation failures automatically redirect back with `old()` input and `$errors` displayed in both an accessible `#form-error-summary` (`role="alert"`) and field-level error notes (`aria-invalid="true"`).
+1. **Laravel Breeze Integration:**
+   - Installed via `laravel/breeze` (`breeze:install blade`), keeping Laravel's native password hashing (`bcrypt`), session regeneration, CSRF protection, and rate-limited login security intact.
+   - `0001_01_01_000005_add_breeze_auth_columns_to_users_table.php` adds `email` (`unique`, nullable for legacy POS staff entries), `email_verified_at`, `password`, and `remember_token` to the `users` table.
+   - `App\Models\User` preserves `username`, `full_name`, `role`, and `avatar` while mapping Breeze's conventional `name` attribute cleanly to `full_name` and generating unique POS usernames on `/register`.
 
-2. **Display-Ready Avatar Storage (`app/Services/AvatarService.php` & `database/migrations/0001_01_01_000004_add_avatar_to_users_table.php`):**
-   - Migration adds a nullable `avatar` (`varchar(255)`) column to `users`.
-   - `AvatarService::prepareAndStore()` uses `Intervention\Image\Laravel\Facades\Image` (`GD` driver) to decode uploaded files, center-crop/resize to **256&times;256**, encode cleanly by format (`PNG`, `WEBP`, or `JPEG`), store under `avatars/<uuid>.<ext>` via `Storage::disk('public')`, and save **only the relative path** in `users.avatar`.
-   - Old replaced avatars are deleted only after database persistence succeeds; users without an uploaded image gracefully fall back to `public/assets/images/avatar-placeholder.svg`.
+2. **Full Resource Controllers (`CustomerController` & `UserController`):**
+   - Registered cleanly via single `Route::resource('customers', CustomerController::class)` and `Route::resource('users', UserController::class)` declarations inside `Route::middleware('auth')->group(...)`.
+   - Includes `show()` detail views (`customers.show`, `users.show`) and `destroy()` delete endpoints backed by an accessible native `<dialog>` confirmation modal.
+   - `UserController::destroy()` prevents deleting the currently signed-in account from the staff directory and removes stored avatar files after deletion succeeds.
 
 ---
 
@@ -53,8 +50,8 @@ This project extends the **Laravel POS Eloquent** application from TFA6 with val
 
 ### Setup Commands
 ```bash
-git clone https://github.com/aniciete/tfa7.git
-cd tfa7
+git clone https://github.com/aniciete/tfa8.git
+cd tfa8
 composer install
 npm install && npm run build
 cp .env.example .env
@@ -70,6 +67,11 @@ php artisan serve
 ```
 Open **[http://localhost:8000](http://localhost:8000)**.
 
+### Seeded Staff Login Credentials
+- **Email:** `admin.reyes@example.com`
+- **Password:** `password`
+*(You can also register a new account at `/register`.)*
+
 ---
 
 ## 4. Automated Test Suite
@@ -78,11 +80,10 @@ Run PHPUnit feature & unit tests:
 ```bash
 php artisan test
 ```
-Tests verify:
-- Landing, About, Customers, and Users routes (`PosEloquentTest`)
-- Customer create/edit validation, `old()` input retention, duplicate email rejection, and self-email update (`PosFormsAndUploadTest`)
-- User create/edit validation and duplicate/dotted username rules (`PosFormsAndUploadTest`)
-- Avatar upload image validation (&le; 2 MB, image-only), 256&times;256 resizing via Intervention Image, `Storage::disk('public')` storage & cleanup, and fallback placeholder rendering (`PosFormsAndUploadTest`)
+Coverage includes:
+- Laravel Breeze authentication suite (`AuthenticationTest`, `RegistrationTest`, `PasswordConfirmationTest`, `PasswordResetTest`, `PasswordUpdateTest`, `EmailVerificationTest`, `ProfileTest`)
+- Middleware redirect verification for all unauthenticated guests across `/dashboard`, `/customers/*`, `/users/*`, `/profile`, and `/avatars/*` (`PosAuthAndResourceTest`)
+- Resource controller CRUD (`index`, `create`, `store`, `show`, `edit`, `update`, `destroy`), validation & `old()` retention, self-delete guard, and Intervention Image 256&times;256 avatar upload lifecycle (`PosEloquentTest`, `PosFormsAndUploadTest`, `PosAuthAndResourceTest`)
 
 ---
 
@@ -90,5 +91,5 @@ Tests verify:
 
 - Schema migrations & seeders: `database/migrations/` & `database/seeders/`
 - Standalone MySQL DDL/DML export: [`database/schema_export.sql`](database/schema_export.sql)
-- Packaging & FTP deployment: copy `env.production.example` to `.env.production` (gitignored), set `FTP_USER`/`FTP_PASS` in `.deploy.env` (gitignored), and run `./deploy-infinityfree.sh`.
-- Live application: **[http://tfa7.freehosting.dev](http://tfa7.freehosting.dev)**
+- Production deployment: copy `env.production.example` to `.env.production` (gitignored), configure `.deploy.env` (gitignored), run `./build-infinityfree-zip.sh` and `./deploy-infinityfree.sh`, then visit `https://tfa8.infinityfreeapp.com/extract.php`.
+- Live application: **[https://tfa8.infinityfreeapp.com](https://tfa8.infinityfreeapp.com)**

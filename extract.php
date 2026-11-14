@@ -1,13 +1,13 @@
 <?php
 
 /**
- * InfinityFree Deployment Extractor & Database Provisioner (TFA7)
- * Unpacks tfa7-infinityfree.zip into /htdocs, sets permissions, creates storage link if supported,
+ * InfinityFree Deployment Extractor & Database Provisioner (TFA8)
+ * Unpacks tfa8-infinityfree.zip into /htdocs, sets permissions, creates storage link if supported,
  * imports schema_export.sql using credentials from .env, cleans up, and self-destructs.
  */
 header('Content-Type: text/plain; charset=utf-8');
 
-$zipFile = __DIR__.'/tfa7-infinityfree.zip';
+$zipFile = __DIR__.'/tfa8-infinityfree.zip';
 
 if (! file_exists($zipFile)) {
     http_response_code(404);
@@ -64,7 +64,7 @@ if (! $extracted) {
 }
 
 @unlink($zipFile);
-echo "SUCCESS: Extracted tfa7-infinityfree.zip successfully!\n";
+echo "SUCCESS: Extracted tfa8-infinityfree.zip successfully!\n";
 
 if (file_exists(__DIR__.'/index2.html')) {
     @unlink(__DIR__.'/index2.html');
@@ -102,7 +102,7 @@ $dbHost = $env['DB_HOST'] ?? '';
 $dbName = $env['DB_DATABASE'] ?? '';
 $dbUser = $env['DB_USERNAME'] ?? '';
 $dbPass = $env['DB_PASSWORD'] ?? '';
-$appUrl = $env['APP_URL'] ?? 'http://tfa7.freehosting.dev';
+$appUrl = $env['APP_URL'] ?? 'https://tfa8.infinityfreeapp.com';
 
 $mysqlSuccess = false;
 if ($dbHost !== '' && $dbName !== '' && $dbUser !== '' && file_exists($sqlFile)) {

@@ -1,8 +1,8 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "aniciete/tfa7",
+    "name": "aniciete/tfa8",
     "type": "project",
-    "description": "IT0049 TFA7 - Forms, Validation, and File Upload (Laravel POS)",
+    "description": "IT0049 TFA8 - Locking It Down: Resource Controllers and Authentication (Laravel POS)",
     "keywords": [
         "laravel",
         "framework"

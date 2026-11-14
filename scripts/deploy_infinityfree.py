@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Automated FTP Deployment for IT0049 POS TFA7 to InfinityFree.
+Automated FTP Deployment for IT0049 POS TFA8 to InfinityFree.
 Reads credentials from environment variables or gitignored .deploy.env.
 """
 
@@ -10,7 +10,7 @@ import subprocess
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-ZIP_PATH = BASE_DIR / "tfa7-infinityfree.zip"
+ZIP_PATH = BASE_DIR / "tfa8-infinityfree.zip"
 EXTRACT_PHP = BASE_DIR / "extract.php"
 
 
@@ -36,7 +36,7 @@ def load_credentials() -> dict:
         "FTP_PORT": int(os.getenv("FTP_PORT", "21")),
         "FTP_USER": user,
         "FTP_PASS": password,
-        "APP_URL": os.getenv("APP_URL", "http://tfa7.freehosting.dev"),
+        "APP_URL": os.getenv("APP_URL", "https://tfa8.infinityfreeapp.com"),
     }
 
 

@@ -17,6 +17,7 @@ class PosFormsAndUploadTest extends TestCase
     {
         parent::setUp();
         $this->seed();
+        $this->actingAs(User::firstOrFail());
     }
 
     public function test_create_customer_form_renders_and_stores_valid_customer(): void

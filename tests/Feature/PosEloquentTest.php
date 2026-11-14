@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Customer;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Carbon;
 use Tests\TestCase;
 
 class PosEloquentTest extends TestCase
@@ -53,32 +54,30 @@ class PosEloquentTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('About This Application');
-        $response->assertSee('Request Execution Flow');
-        $response->assertSee('Data Architecture: Validation & Public Storage');
-        $response->assertSee('Eloquent ORM');
+        $response->assertSee('Authenticated Request Execution Flow');
+        $response->assertSee('Middleware Access Control');
+        $response->assertSee('RESTful Resource Controllers');
         $response->assertSee('aria-current="page"', false);
 
         // Extended assertions for landmarks and flow
         $response->assertSee('Skip to main content');
-        $response->assertSee('Route & CSRF Verification');
-        $response->assertSee('Form Request Validation');
-        $response->assertSee('Image Preparation & Eloquent Storage');
-        $response->assertSee('Redirect & View Presentation');
-        $response->assertSee('App\Models\Customer');
-        $response->assertSee('App\Models\User');
+        $response->assertSee('Route::resource');
+        $response->assertSee('Breeze Session');
+        $response->assertSee('Form Requests');
     }
 
     /**
-     * Test the customer accounts page responds with HTTP 200 and renders records retrieved via Eloquent.
+     * Test the customer accounts page responds with HTTP 200 for authenticated users and renders records retrieved via Eloquent.
      */
     public function test_customers_page_returns_ok_and_displays_eloquent_records(): void
     {
-        $response = $this->get('/customers');
+        $authUser = User::firstOrFail();
+        $response = $this->actingAs($authUser)->get('/customers');
 
         $response->assertOk();
         $response->assertSee('Customer Accounts');
         $response->assertSee('Total Records');
-        $response->assertSee('Eloquent ORM');
+        $response->assertSee('Route::resource');
         $response->assertSee('Elena Rostova');
         $response->assertSee('elena.rostova@example.com');
         $response->assertSee('+1 (555) 234-5678');
@@ -99,16 +98,17 @@ class PosEloquentTest extends TestCase
     }
 
     /**
-     * Test the user accounts page responds with HTTP 200 and renders staff records retrieved via Eloquent.
+     * Test the user accounts page responds with HTTP 200 for authenticated users and renders staff records retrieved via Eloquent.
      */
     public function test_users_page_returns_ok_and_displays_eloquent_records(): void
     {
-        $response = $this->get('/users');
+        $authUser = User::firstOrFail();
+        $response = $this->actingAs($authUser)->get('/users');
 
         $response->assertOk();
         $response->assertSee('User Accounts');
         $response->assertSee('Total Users');
-        $response->assertSee('Eloquent ORM');
+        $response->assertSee('Route::resource');
         $response->assertSee('admin.reyes');
         $response->assertSee('Carlos Reyes');
         $response->assertSee('Store Administrator');
@@ -148,23 +148,23 @@ class PosEloquentTest extends TestCase
     {
         $newCustomer = Customer::create([
             'full_name' => 'Test Customer',
-            'email'     => 'test.customer@example.com',
-            'phone'     => '+1 (555) 000-1111',
+            'email' => 'test.customer@example.com',
+            'phone' => '+1 (555) 000-1111',
         ]);
         $this->assertDatabaseHas('customers', [
             'email' => 'test.customer@example.com',
         ]);
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $newCustomer->created_at);
+        $this->assertInstanceOf(Carbon::class, $newCustomer->created_at);
 
         $newUser = User::create([
-            'username'  => 'test.user',
+            'username' => 'test.user',
             'full_name' => 'Test Operator',
-            'role'      => 'Auditor',
+            'role' => 'Auditor',
         ]);
         $this->assertDatabaseHas('users', [
             'username' => 'test.user',
         ]);
-        $this->assertInstanceOf(\Illuminate\Support\Carbon::class, $newUser->created_at);
+        $this->assertInstanceOf(Carbon::class, $newUser->created_at);
     }
 
     /**
@@ -172,13 +172,13 @@ class PosEloquentTest extends TestCase
      */
     public function test_local_assets_and_fonts_exist(): void
     {
-        $publicPath = public_path() . '/';
-        $this->assertFileExists($publicPath . 'assets/css/style.css');
-        $this->assertFileExists($publicPath . 'favicon.svg');
-        $this->assertFileExists($publicPath . 'assets/fonts/bricolage-grotesque-latin.woff2');
-        $this->assertFileExists($publicPath . 'assets/fonts/ibm-plex-mono-400.woff2');
-        $this->assertFileExists($publicPath . 'assets/fonts/ibm-plex-mono-500.woff2');
-        $this->assertFileExists($publicPath . 'assets/fonts/ibm-plex-mono-600.woff2');
+        $publicPath = public_path().'/';
+        $this->assertFileExists($publicPath.'assets/css/style.css');
+        $this->assertFileExists($publicPath.'favicon.svg');
+        $this->assertFileExists($publicPath.'assets/fonts/bricolage-grotesque-latin.woff2');
+        $this->assertFileExists($publicPath.'assets/fonts/ibm-plex-mono-400.woff2');
+        $this->assertFileExists($publicPath.'assets/fonts/ibm-plex-mono-500.woff2');
+        $this->assertFileExists($publicPath.'assets/fonts/ibm-plex-mono-600.woff2');
     }
 
     /**
