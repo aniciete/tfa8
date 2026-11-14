@@ -3,10 +3,12 @@
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
@@ -36,11 +38,14 @@ class User extends Authenticatable
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<int, string>
+     * @var list<string>
      */
     protected $fillable = [
         'username',
         'full_name',
+        'name',
+        'email',
+        'password',
         'role',
         'avatar',
     ];
@@ -51,8 +56,41 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $hidden = [
+        'password',
         'remember_token',
     ];
+
+    /**
+     * Map Breeze's conventional `name` attribute directly to the POS `full_name` column.
+     */
+    protected function name(): Attribute
+    {
+        return Attribute::make(
+            get: fn (): string => (string) ($this->attributes['full_name'] ?? ''),
+            set: fn (?string $value): array => ['full_name' => (string) ($value ?? '')],
+        );
+    }
+
+    /**
+     * Generate a unique POS username from a name or email prefix during self-registration.
+     */
+    public static function generateUniqueUsername(string $source): string
+    {
+        $prefix = Str::before(trim($source), '@');
+        $base = preg_replace('/[^a-zA-Z0-9._-]+/', '.', strtolower($prefix)) ?? 'staff';
+        $base = trim($base, '._-');
+        $base = $base !== '' ? substr($base, 0, 40) : 'staff';
+
+        $candidate = $base;
+        $counter = 1;
+
+        while (static::query()->where('username', $candidate)->exists()) {
+            $candidate = substr($base, 0, 40).'.'.$counter;
+            $counter++;
+        }
+
+        return $candidate;
+    }
 
     /**
      * Determine whether the user has an existing avatar stored on the public disk.
@@ -86,6 +124,8 @@ class User extends Authenticatable
     protected function casts(): array
     {
         return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
             'created_at' => 'datetime',
             'updated_at' => 'datetime',
         ];
