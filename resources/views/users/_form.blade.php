@@ -84,6 +84,85 @@
             </p>
         </div>
 
+        <div class="form-group {{ $errors->has('email') ? 'has-error' : '' }}">
+            <label for="email" class="form-label">
+                <span>Login Email</span>
+                <span class="optional-tag">(Optional &bull; Needed for Sign In)</span>
+            </label>
+            <p id="email_help" class="field-help">Assign a unique email address so this operator can authenticate via Breeze Sign In.</p>
+            <input
+                type="email"
+                id="email"
+                name="email"
+                class="form-control"
+                value="{{ old('email', $user->email) }}"
+                autocomplete="email"
+                autocorrect="off"
+                autocapitalize="none"
+                spellcheck="false"
+                maxlength="150"
+                placeholder="e.g. cashier.cruz@example.com"
+                aria-invalid="{{ $errors->has('email') ? 'true' : 'false' }}"
+                aria-describedby="{{ $errors->has('email') ? 'email_help email_error' : 'email_help' }}"
+                data-error="email_error"
+            >
+            <p id="email_error" class="field-error-msg">
+                @error('email')
+                    <span class="err-tag" aria-hidden="true">Error:</span> {{ $message }}
+                @else
+                    <span class="err-tag" aria-hidden="true">Error:</span> Enter a valid, unique email address.
+                @enderror
+            </p>
+        </div>
+
+        <div class="form-row-two">
+            <div class="form-group {{ $errors->has('password') ? 'has-error' : '' }}">
+                <label for="password" class="form-label">
+                    <span>{{ $mode === 'create' ? 'Password' : 'New Password' }}</span>
+                    <span class="optional-tag">({{ $mode === 'create' ? 'Optional' : 'Leave blank to keep current' }})</span>
+                </label>
+                <div class="password-input-wrap">
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        class="form-control"
+                        autocomplete="new-password"
+                        aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}"
+                        @error('password') aria-describedby="password_error" @enderror
+                        data-error="password_error"
+                    >
+                    <button
+                        type="button"
+                        class="password-toggle-btn"
+                        data-password-toggle="password"
+                        aria-pressed="false"
+                        aria-label="Show password"
+                    >Show</button>
+                </div>
+                <p id="password_error" class="field-error-msg">
+                    @error('password')
+                        <span class="err-tag" aria-hidden="true">Error:</span> {{ $message }}
+                    @else
+                        <span class="err-tag" aria-hidden="true">Error:</span> Password must be at least 8 characters.
+                    @enderror
+                </p>
+            </div>
+
+            <div class="form-group {{ $errors->has('password_confirmation') ? 'has-error' : '' }}">
+                <label for="password_confirmation" class="form-label">
+                    <span>Confirm Password</span>
+                </label>
+                <input
+                    type="password"
+                    id="password_confirmation"
+                    name="password_confirmation"
+                    class="form-control"
+                    autocomplete="new-password"
+                >
+            </div>
+        </div>
+
         <fieldset class="form-group role-fieldset {{ $errors->has('role') ? 'has-error' : '' }}">
             <legend class="form-label">System Role</legend>
             <p id="role_help" class="field-help">Assign one operational permission role for this terminal account.</p>

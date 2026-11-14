@@ -237,8 +237,93 @@
         });
     };
 
+    const initPasswordToggles = () => {
+        document.querySelectorAll('[data-password-toggle]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const target = document.getElementById(btn.dataset.passwordToggle || '');
+                if (!target) {
+                    return;
+                }
+                const reveal = target.type === 'password';
+                target.type = reveal ? 'text' : 'password';
+                btn.setAttribute('aria-pressed', reveal ? 'true' : 'false');
+                btn.setAttribute('aria-label', reveal ? 'Hide password' : 'Show password');
+                btn.textContent = reveal ? 'Hide' : 'Show';
+            });
+        });
+    };
+
+    const initDeleteConfirmDialog = () => {
+        const dialog = document.getElementById('confirm-delete-dialog');
+        if (!dialog || typeof dialog.showModal !== 'function') {
+            return;
+        }
+
+        const msgEl = document.getElementById('confirm-delete-message');
+        const cancelBtn = document.getElementById('confirm-delete-cancel');
+        const confirmBtn = document.getElementById('confirm-delete-confirm');
+        let pendingForm = null;
+
+        if (!('closedBy' in HTMLDialogElement.prototype)) {
+            const outside = (e) => {
+                const r = dialog.getBoundingClientRect();
+                return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+            };
+            let pressedOutside = false;
+            dialog.addEventListener('pointerdown', (e) => {
+                pressedOutside = outside(e);
+            });
+            dialog.addEventListener('pointerup', (e) => {
+                if (pressedOutside && outside(e)) {
+                    dialog.close();
+                }
+            });
+        }
+
+        document.querySelectorAll('form[data-confirm-delete]').forEach((form) => {
+            form.addEventListener('submit', (e) => {
+                if (form.dataset.confirmed === 'true') {
+                    return;
+                }
+                e.preventDefault();
+                pendingForm = form;
+                const recordName = form.dataset.recordName || 'this record';
+                if (msgEl) {
+                    msgEl.textContent = `Are you sure you want to delete "${recordName}"? This action cannot be undone.`;
+                }
+                dialog.returnValue = '';
+                dialog.showModal();
+            });
+        });
+
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                dialog.close('cancel');
+            });
+        }
+
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', () => {
+                dialog.close('confirm');
+            });
+        }
+
+        dialog.addEventListener('close', () => {
+            const choice = dialog.returnValue;
+            dialog.returnValue = '';
+            const formToSubmit = pendingForm;
+            pendingForm = null;
+            if (choice === 'confirm' && formToSubmit) {
+                formToSubmit.dataset.confirmed = 'true';
+                formToSubmit.submit();
+            }
+        });
+    };
+
     document.addEventListener('DOMContentLoaded', () => {
         initValidationAriaSync();
         initAvatarPreview();
+        initPasswordToggles();
+        initDeleteConfirmDialog();
     });
 })();

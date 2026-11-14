@@ -6,7 +6,7 @@
         <div class="directory-header-copy">
             <h1 class="page-title">Customer Accounts</h1>
             <p class="page-lead">
-                Registered retail and commercial client profiles retrieved through the <code>Customer</code> Eloquent ORM model. Total Records: {{ count($customers) }}.
+                Registered retail and commercial client profiles managed via <code>Route::resource('customers')</code>. Total Records: {{ count($customers) }}.
             </p>
         </div>
         <div class="directory-actions">
@@ -30,15 +30,33 @@
                 @forelse ($customers as $index => $customer)
                     <tr>
                         <td class="td-num" data-label="#">{{ sprintf('%02d', $index + 1) }}</td>
-                        <th scope="row" class="cell-primary" data-label="Full Name">{{ $customer->full_name }}</th>
+                        <th scope="row" class="cell-primary" data-label="Full Name">
+                            <a href="{{ route('customers.show', $customer) }}" class="table-link">{{ $customer->full_name }}</a>
+                        </th>
                         <td class="cell-email" data-label="Email Address">
                             <a href="mailto:{{ $customer->email }}" class="table-link">{{ $customer->email }}</a>
                         </td>
                         <td class="cell-mono tabular-num" data-label="Phone Number">{{ $customer->phone ?: '—' }}</td>
                         <td class="cell-actions" data-label="Actions">
-                            <a href="{{ route('customers.edit', $customer) }}"
-                               class="table-action-link"
-                               aria-label="Edit {{ $customer->full_name }}">Edit</a>
+                            <div class="action-pill-group">
+                                <a href="{{ route('customers.show', $customer) }}"
+                                   class="table-action-link"
+                                   aria-label="View {{ $customer->full_name }}">View</a>
+                                <a href="{{ route('customers.edit', $customer) }}"
+                                   class="table-action-link"
+                                   aria-label="Edit {{ $customer->full_name }}">Edit</a>
+                                <form action="{{ route('customers.destroy', $customer) }}"
+                                      method="POST"
+                                      class="inline-delete-form"
+                                      data-confirm-delete
+                                      data-record-name="{{ $customer->full_name }}">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit"
+                                            class="table-action-link table-action-danger"
+                                            aria-label="Delete {{ $customer->full_name }}">Delete</button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 @empty

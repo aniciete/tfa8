@@ -6,7 +6,7 @@
         <div class="directory-header-copy">
             <h1 class="page-title">User Accounts</h1>
             <p class="page-lead">
-                Operational personnel, cashiers, and administrators retrieved through the <code>User</code> Eloquent ORM model. Total Users: {{ count($users) }}.
+                Operational personnel, cashiers, and administrators managed via <code>Route::resource('users')</code>. Total Users: {{ count($users) }}.
             </p>
         </div>
         <div class="directory-actions">
@@ -33,6 +33,7 @@
                         $role = $user->role ?? 'Staff Member';
                         $roleKey = strtolower(explode(' ', $role)[0]);
                         $hasAvatar = $user->hasAvatar();
+                        $isCurrentUser = auth()->check() && $user->is(auth()->user());
                     @endphp
                     <tr>
                         <td class="td-num" data-label="#">{{ sprintf('%02d', $index + 1) }}</td>
@@ -46,15 +47,42 @@
                                 loading="lazy"
                             >
                         </td>
-                        <td class="cell-mono tabular-num" data-label="Username">{{ $user->username }}</td>
-                        <th scope="row" class="cell-primary" data-label="Full Name">{{ $user->full_name }}</th>
+                        <td class="cell-mono tabular-num" data-label="Username">
+                            <a href="{{ route('users.show', $user) }}" class="table-link">{{ $user->username }}</a>
+                        </td>
+                        <th scope="row" class="cell-primary" data-label="Full Name">
+                            {{ $user->full_name }}
+                            @if ($user->email)
+                                <div class="cell-subtext cell-mono">{{ $user->email }}</div>
+                            @endif
+                        </th>
                         <td class="cell-role" data-label="System Role">
                             <span class="role-badge role-{{ $roleKey }}">{{ $role }}</span>
                         </td>
                         <td class="cell-actions" data-label="Actions">
-                            <a href="{{ route('users.edit', $user) }}"
-                               class="table-action-link"
-                               aria-label="Edit {{ $user->full_name }}">Edit</a>
+                            <div class="action-pill-group">
+                                <a href="{{ route('users.show', $user) }}"
+                                   class="table-action-link"
+                                   aria-label="View {{ $user->full_name }}">View</a>
+                                <a href="{{ route('users.edit', $user) }}"
+                                   class="table-action-link"
+                                   aria-label="Edit {{ $user->full_name }}">Edit</a>
+                                @if (! $isCurrentUser)
+                                    <form action="{{ route('users.destroy', $user) }}"
+                                          method="POST"
+                                          class="inline-delete-form"
+                                          data-confirm-delete
+                                          data-record-name="{{ $user->full_name }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="table-action-link table-action-danger"
+                                                aria-label="Delete {{ $user->full_name }}">Delete</button>
+                                    </form>
+                                @else
+                                    <span class="session-badge">You</span>
+                                @endif
+                            </div>
                         </td>
                     </tr>
                 @empty
