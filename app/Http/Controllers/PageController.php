@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Customer;
+use App\Models\User;
 use Illuminate\View\View;
 
 class PageController extends Controller
@@ -14,6 +16,19 @@ class PageController extends Controller
         return view('pages.home', [
             'title' => 'Home | POS Eloquent',
             'activePage' => 'home',
+        ]);
+    }
+
+    /**
+     * Display the authenticated POS operations dashboard.
+     */
+    public function dashboard(): View
+    {
+        return view('dashboard', [
+            'title' => 'Dashboard | POS Eloquent',
+            'activePage' => 'dashboard',
+            'customerCount' => Customer::query()->count(),
+            'userCount' => User::query()->count(),
         ]);
     }
 

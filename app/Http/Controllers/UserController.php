@@ -6,6 +6,8 @@ use App\Http\Requests\SaveUserRequest;
 use App\Models\User;
 use App\Services\AvatarService;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\View\View;
 use Throwable;
 
@@ -50,13 +52,20 @@ class UserController extends Controller
             $avatarPath = $avatarService->prepareAndStore($request->file('avatar'));
         }
 
+        $attributes = [
+            'username' => $validated['username'],
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'] ?? null,
+            'role' => $validated['role'] ?? 'Staff Member',
+            'avatar' => $avatarPath,
+        ];
+
+        if (! empty($validated['password'])) {
+            $attributes['password'] = Hash::make($validated['password']);
+        }
+
         try {
-            User::create([
-                'username' => $validated['username'],
-                'full_name' => $validated['full_name'],
-                'role' => $validated['role'] ?? 'Staff Member',
-                'avatar' => $avatarPath,
-            ]);
+            User::create($attributes);
         } catch (Throwable $e) {
             if ($avatarPath !== null) {
                 $avatarService->delete($avatarPath);
@@ -68,6 +77,18 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', 'User account created successfully.');
+    }
+
+    /**
+     * Display an individual staff user account profile and role details.
+     */
+    public function show(User $user): View
+    {
+        return view('users.show', [
+            'title' => $user->full_name.' | User Account | POS Eloquent',
+            'activePage' => 'users',
+            'user' => $user,
+        ]);
     }
 
     /**
@@ -99,13 +120,20 @@ class UserController extends Controller
 
         $avatarToPersist = $newAvatarPath ?? ($removeRequested ? null : $oldAvatar);
 
+        $attributes = [
+            'username' => $validated['username'],
+            'full_name' => $validated['full_name'],
+            'email' => $validated['email'] ?? null,
+            'role' => $validated['role'] ?? $user->role ?? 'Staff Member',
+            'avatar' => $avatarToPersist,
+        ];
+
+        if (! empty($validated['password'])) {
+            $attributes['password'] = Hash::make($validated['password']);
+        }
+
         try {
-            $user->update([
-                'username' => $validated['username'],
-                'full_name' => $validated['full_name'],
-                'role' => $validated['role'] ?? $user->role ?? 'Staff Member',
-                'avatar' => $avatarToPersist,
-            ]);
+            $user->update($attributes);
         } catch (Throwable $e) {
             if ($newAvatarPath !== null) {
                 $avatarService->delete($newAvatarPath);
@@ -122,5 +150,28 @@ class UserController extends Controller
         return redirect()
             ->route('users.index')
             ->with('success', 'User account updated successfully.');
+    }
+
+    /**
+     * Remove an existing staff user account and its stored avatar file.
+     */
+    public function destroy(Request $request, User $user, AvatarService $avatarService): RedirectResponse
+    {
+        if ($user->is($request->user())) {
+            return redirect()
+                ->route('users.index')
+                ->with('error', 'You cannot delete the currently signed-in account from this directory.');
+        }
+
+        $avatarPath = $user->avatar;
+        $user->delete();
+
+        if ($avatarPath !== null) {
+            $avatarService->delete($avatarPath);
+        }
+
+        return redirect()
+            ->route('users.index')
+            ->with('success', 'User account deleted successfully.');
     }
 }

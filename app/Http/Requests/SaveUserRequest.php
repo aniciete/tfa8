@@ -5,6 +5,7 @@ namespace App\Http\Requests;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
 class SaveUserRequest extends FormRequest
 {
@@ -22,10 +23,12 @@ class SaveUserRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $role = trim((string) $this->input('role', ''));
+        $email = strtolower(trim((string) $this->input('email', '')));
 
         $this->merge([
             'username' => trim((string) $this->input('username', '')),
             'full_name' => trim((string) $this->input('full_name', '')),
+            'email' => $email === '' ? null : $email,
             'role' => $role === '' ? 'Staff Member' : $role,
             'remove_avatar' => $this->boolean('remove_avatar'),
         ]);
@@ -50,6 +53,15 @@ class SaveUserRequest extends FormRequest
                 Rule::unique('users', 'username')->ignore($user?->id),
             ],
             'full_name' => ['required', 'string', 'max:100'],
+            'email' => [
+                'nullable',
+                'string',
+                'lowercase',
+                'email',
+                'max:150',
+                Rule::unique('users', 'email')->ignore($user?->id),
+            ],
+            'password' => ['nullable', 'string', 'confirmed', Password::defaults()],
             'role' => ['nullable', 'string', 'max:50', Rule::in(User::ROLES)],
             'avatar' => ['nullable', 'file', 'image', 'max:2048'],
             'remove_avatar' => ['nullable', 'boolean'],
@@ -70,6 +82,10 @@ class SaveUserRequest extends FormRequest
             'username.unique' => 'That username is already assigned to another staff account.',
             'full_name.required' => 'Full name is required.',
             'full_name.max' => 'Full name must not exceed 100 characters.',
+            'email.email' => 'Please enter a valid email address.',
+            'email.max' => 'Email address must not exceed 150 characters.',
+            'email.unique' => 'That email address is already linked to another staff account.',
+            'password.confirmed' => 'The password confirmation does not match.',
             'role.in' => 'Please choose one of the supported system roles.',
             'avatar.file' => 'Please select a valid profile picture file.',
             'avatar.image' => 'The profile picture must be a valid image file (JPG, PNG, GIF, BMP, or WebP).',

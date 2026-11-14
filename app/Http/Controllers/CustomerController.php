@@ -48,6 +48,18 @@ class CustomerController extends Controller
     }
 
     /**
+     * Display an individual customer account record.
+     */
+    public function show(Customer $customer): View
+    {
+        return view('customers.show', [
+            'title' => $customer->full_name.' | Customer Account | POS Eloquent',
+            'activePage' => 'customers',
+            'customer' => $customer,
+        ]);
+    }
+
+    /**
      * Display the form pre-filled with an existing customer's profile data.
      */
     public function edit(Customer $customer): View
@@ -69,5 +81,17 @@ class CustomerController extends Controller
         return redirect()
             ->route('customers.index')
             ->with('success', 'Customer account updated successfully.');
+    }
+
+    /**
+     * Remove an existing customer record from storage.
+     */
+    public function destroy(Customer $customer): RedirectResponse
+    {
+        $customer->delete();
+
+        return redirect()
+            ->route('customers.index')
+            ->with('success', 'Customer account deleted successfully.');
     }
 }
